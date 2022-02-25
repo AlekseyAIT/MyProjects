@@ -1,155 +1,291 @@
 package sample;
 
 import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.scene.Group;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Paint;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main extends Application {
 
     @Override
-    public void start(Stage primaryStage) {
-        Text text = new Text("Button was clicked 0 times!");
+    public void start(Stage stage) {
+        DataBase dataBaseUser = new DataBase();
 
-        text.setLayoutX(100);
-        text.setLayoutY(48);
+        Text upperText = new Text("Вход");
+        upperText.setFont(new Font(16));
 
-        Button button = new Button("Click here!");
+        Text entranceInAccountIsSuccessful = new Text("Вход в аккаунт выполнен!");
 
-        button.setLayoutX(20);
-        button.setLayoutY(30);
+        Text thisUsernameIsAlreadyTakenError = new Text("Данное имя пользователя уже занято!");
+        Text someDetailsAreNotWrittenError = new Text("Заполните все поля!");
+        Text thisUsernameIsNotExistError = new Text("Такого пользователя не существует!");
+        Text passwordIsIncorrect = new Text("Пароль неверен!");
+
+        thisUsernameIsAlreadyTakenError.setFill(Paint.valueOf("RED"));
+        someDetailsAreNotWrittenError.setFill(Paint.valueOf("RED"));
+        thisUsernameIsNotExistError.setFill(Paint.valueOf("RED"));
+        passwordIsIncorrect.setFill(Paint.valueOf("RED"));
+
+        TextField username = new TextField();
+        PasswordField password = new PasswordField();
+
+        username.setPromptText("Имя пользователя");
+        password.setPromptText("Пароль");
+
+        Button entryButton = new Button("Войти");
+        Button registerButton = new Button("Зарегестрироваться");
+        Button goToRegistrationButton = new Button("Регистрация");
+        Button goBack = new Button("Вернуться");
+
+        AtomicBoolean errorFlagUsername = new AtomicBoolean(false);
+        AtomicBoolean errorFlagDetails = new AtomicBoolean(false);
+        AtomicBoolean errorFlagThisUsernameIsNotExist = new AtomicBoolean(false);
+        AtomicBoolean errorFlagPasswordIsIncorrect = new AtomicBoolean(false);
+
+        VBox pane = new VBox(goBack, thisUsernameIsAlreadyTakenError, someDetailsAreNotWrittenError,
+                entranceInAccountIsSuccessful, upperText, username, password, entryButton,
+                goToRegistrationButton, thisUsernameIsNotExistError, passwordIsIncorrect);
+
+        pane.getChildren().remove(goBack);
+        pane.getChildren().remove(registerButton);
+        pane.getChildren().remove(thisUsernameIsAlreadyTakenError);
+        pane.getChildren().remove(someDetailsAreNotWrittenError);
+        pane.getChildren().remove(entranceInAccountIsSuccessful);
+        pane.getChildren().remove(thisUsernameIsNotExistError);
+        pane.getChildren().remove(passwordIsIncorrect);
+
+        pane.setAlignment(Pos.CENTER);
+        pane.setPadding(new Insets(0, 60, 0, 60));
+        pane.setSpacing(12);
+
+        entryButton.setOnAction(actionEvent -> {
+            LinkedList<String[]> list = dataBaseUser.getList();
+            boolean flagHelper;
+
+            for (String[] strings : list) {
+                if (strings[0].equals(username.getText()) && strings[1].equals(password.getText())) {
+                    pane.getChildren().removeAll(thisUsernameIsAlreadyTakenError, someDetailsAreNotWrittenError, passwordIsIncorrect, upperText, username, password, entryButton, goToRegistrationButton);
+                    pane.getChildren().add(entranceInAccountIsSuccessful);
+                    break;
+                } else if (strings[0].equals(username.getText()) && !strings[1].equals(password.getText()) && !password.getText().equals("")) {
+                    flagHelper = errorFlagDetails.get();
+                    if (flagHelper) {
+                        pane.getChildren().remove(someDetailsAreNotWrittenError);
+                        errorFlagDetails.set(false);
+                    }
+
+                    flagHelper = errorFlagThisUsernameIsNotExist.get();
+                    if (flagHelper) {
+                        pane.getChildren().remove(thisUsernameIsNotExistError);
+                        errorFlagThisUsernameIsNotExist.set(false);
+                    }
+
+                    flagHelper = errorFlagPasswordIsIncorrect.get();
+                    if (!flagHelper) {
+                        pane.getChildren().add(passwordIsIncorrect);
+                        errorFlagPasswordIsIncorrect.set(true);
+                    }
+
+                    break;
+                } else if (username.getText().equals("")
+                        || strings[0].equals(username.getText()) && password.getText().equals("")) {
+                    flagHelper = errorFlagPasswordIsIncorrect.get();
+                    if (flagHelper) {
+                        pane.getChildren().remove(passwordIsIncorrect);
+                        errorFlagPasswordIsIncorrect.set(false);
+                    }
+
+                    flagHelper = errorFlagThisUsernameIsNotExist.get();
+                    if (flagHelper) {
+                        pane.getChildren().remove(thisUsernameIsNotExistError);
+                        errorFlagThisUsernameIsNotExist.set(false);
+                    }
+
+                    flagHelper = errorFlagDetails.get();
+                    if (!flagHelper) {
+                        pane.getChildren().add(someDetailsAreNotWrittenError);
+                        errorFlagDetails.set(true);
+                    }
+
+                    break;
+                } else if (!strings[0].equals(username.getText()) && password.getText().equals("")
+                        || !strings[0].equals(username.getText()) && !password.getText().equals("")) {
+                    flagHelper = errorFlagPasswordIsIncorrect.get();
+                    if (flagHelper) {
+                        pane.getChildren().remove(passwordIsIncorrect);
+                        errorFlagPasswordIsIncorrect.set(false);
+                    }
+
+                    flagHelper = errorFlagDetails.get();
+                    if (flagHelper) {
+                        pane.getChildren().remove(someDetailsAreNotWrittenError);
+                        errorFlagDetails.set(false);
+                    }
+
+                    flagHelper = errorFlagThisUsernameIsNotExist.get();
+                    if (!flagHelper) {
+                        pane.getChildren().add(thisUsernameIsNotExistError);
+                        errorFlagThisUsernameIsNotExist.set(true);
+                    }
+                }
+            }
+        });
 
         AtomicInteger counter = new AtomicInteger(0);
-        button.setOnAction(actionEvent -> text.setText("Button was clicked " + counter.incrementAndGet() + " times!"));
+        registerButton.setOnAction(actionEvent -> {
+            LinkedList<String[]> list = dataBaseUser.getList();
+            boolean userIsCorrect = true;
+            boolean flagHelper;
 
-        CheckBox checkBox1 = new CheckBox("Java");
+            for (String[] strings : list) {
+                if (strings[0].equals(username.getText())) {
+                    flagHelper = errorFlagDetails.get();
+                    if (flagHelper) {
+                        pane.getChildren().remove(someDetailsAreNotWrittenError);
+                        errorFlagDetails.set(false);
+                    }
 
-        checkBox1.setLayoutX(20);
-        checkBox1.setLayoutY(100);
+                    flagHelper = errorFlagUsername.get();
+                    if (!flagHelper) {
+                        pane.getChildren().add(thisUsernameIsAlreadyTakenError);
+                        errorFlagUsername.set(true);
+                    }
 
-        CheckBox checkBox2 = new CheckBox("C++");
+                    userIsCorrect = false;
+                    break;
+                }
+            }
 
-        checkBox2.setLayoutX(20);
-        checkBox2.setLayoutY(130);
+            if (userIsCorrect) {
+                if (!username.getText().equals("") && !password.getText().equals("")) {
+                    dataBaseUser.addUser(new String[]{username.getText(), password.getText()});
+                    System.out.println("Зарегистрированный пользователь №" + counter.incrementAndGet() + ": " +
+                            Arrays.toString(new String[]{username.getText(), password.getText()}));
 
-        CheckBox checkBox3 = new CheckBox("Python");
+                    flagHelper = errorFlagDetails.get();
+                    if (flagHelper) {
+                        pane.getChildren().remove(someDetailsAreNotWrittenError);
+                        errorFlagDetails.set(false);
+                    }
 
-        checkBox3.setLayoutX(20);
-        checkBox3.setLayoutY(160);
+                    flagHelper = errorFlagUsername.get();
+                    if (flagHelper) {
+                        pane.getChildren().remove(thisUsernameIsAlreadyTakenError);
+                        errorFlagUsername.set(false);
+                    }
+                } else if (username.getText().equals("") && password.getText().equals("")) {
+                    flagHelper = errorFlagUsername.get();
+                    if (flagHelper) {
+                        pane.getChildren().remove(thisUsernameIsAlreadyTakenError);
+                        errorFlagUsername.set(false);
+                    }
 
-        Text text1 = new Text("Nothing is selected!");
-
-        text1.setLayoutX(100);
-        text1.setLayoutY(135);
-
-        checkBox1.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent actionEvent) {
-                if (checkBox1.isSelected()) {
-                    if (!checkBox2.isSelected() && !checkBox3.isSelected()) {
-                        text1.setText(checkBox1.getText() + " is selected!");
-                    } else if (checkBox2.isSelected() && checkBox3.isSelected()) {
-                        text1.setText(checkBox1.getText() + ", " + checkBox2.getText() + ", " + checkBox3.getText() + " is selected!");
-                    } else if (!checkBox2.isSelected() && checkBox3.isSelected()) {
-                        text1.setText(checkBox1.getText() + ", " + checkBox3.getText() + " is selected!");
-                    } else if (checkBox2.isSelected() && !checkBox3.isSelected()) {
-                        text1.setText(checkBox1.getText() + ", " + checkBox2.getText() + " is selected!");
+                    flagHelper = errorFlagDetails.get();
+                    if (!flagHelper) {
+                        pane.getChildren().add(someDetailsAreNotWrittenError);
+                        errorFlagDetails.set(true);
                     }
                 } else {
-                    if (!checkBox2.isSelected() && !checkBox3.isSelected()) {
-                        text1.setText("Nothing is selected!");
-                    } else if (checkBox2.isSelected() && checkBox3.isSelected()) {
-                        text1.setText(checkBox2.getText() + ", " + checkBox3.getText() + " is selected!");
-                    } else if (!checkBox2.isSelected() && checkBox3.isSelected()) {
-                        text1.setText(checkBox3.getText() + " is selected!");
-                    } else if (checkBox2.isSelected() && !checkBox3.isSelected()) {
-                        text1.setText(checkBox2.getText() + " is selected!");
+                    flagHelper = errorFlagUsername.get();
+                    if (flagHelper) {
+                        pane.getChildren().remove(thisUsernameIsAlreadyTakenError);
+                        errorFlagUsername.set(false);
+                    }
+
+                    flagHelper = errorFlagDetails.get();
+                    if (!flagHelper) {
+                        pane.getChildren().add(someDetailsAreNotWrittenError);
+                        errorFlagDetails.set(true);
                     }
                 }
             }
         });
 
-        checkBox2.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent actionEvent) {
-                if (checkBox2.isSelected()) {
-                    if (!checkBox1.isSelected() && !checkBox3.isSelected()) {
-                        text1.setText(checkBox2.getText() + " is selected!");
-                    } else if (checkBox1.isSelected() && checkBox3.isSelected()) {
-                        text1.setText(checkBox1.getText() + ", " + checkBox2.getText() + ", " + checkBox3.getText() + " is selected!");
-                    } else if (!checkBox1.isSelected() && checkBox3.isSelected()) {
-                        text1.setText(checkBox2.getText() + ", " + checkBox3.getText() + " is selected!");
-                    } else if (checkBox1.isSelected() && !checkBox3.isSelected()) {
-                        text1.setText(checkBox1.getText() + ", " + checkBox2.getText() + " is selected!");
-                    }
-                } else {
-                    if (!checkBox1.isSelected() && !checkBox3.isSelected()) {
-                        text1.setText("Nothing is selected!");
-                    } else if (checkBox1.isSelected() && checkBox3.isSelected()) {
-                        text1.setText(checkBox1.getText() + ", " + checkBox3.getText() + " is selected!");
-                    } else if (!checkBox1.isSelected() && checkBox3.isSelected()) {
-                        text1.setText(checkBox3.getText() + " is selected!");
-                    } else if (checkBox1.isSelected() && !checkBox3.isSelected()) {
-                        text1.setText(checkBox1.getText() + " is selected!");
-                    }
-                }
+        goToRegistrationButton.setOnAction(actionEvent -> {
+            boolean flagHelper;
+
+            upperText.setText("Регистрация");
+
+            pane.getChildren().remove(entryButton);
+            pane.getChildren().remove(goToRegistrationButton);
+
+            flagHelper = errorFlagDetails.get();
+            if (flagHelper) {
+                pane.getChildren().remove(someDetailsAreNotWrittenError);
+                errorFlagDetails.set(false);
             }
+
+            flagHelper = errorFlagPasswordIsIncorrect.get();
+            if (flagHelper) {
+                pane.getChildren().remove(passwordIsIncorrect);
+                errorFlagPasswordIsIncorrect.set(false);
+            }
+
+            flagHelper = errorFlagThisUsernameIsNotExist.get();
+            if (flagHelper) {
+                pane.getChildren().remove(thisUsernameIsNotExistError);
+                errorFlagThisUsernameIsNotExist.set(false);
+            }
+
+            pane.getChildren().add(registerButton);
+            pane.getChildren().add(goBack);
+
+            username.setText("");
+            password.setText("");
         });
 
-        checkBox3.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent actionEvent) {
-                if (checkBox3.isSelected()) {
-                    if (!checkBox1.isSelected() && !checkBox2.isSelected()) {
-                        text1.setText(checkBox3.getText() + " is selected!");
-                    } else if (checkBox1.isSelected() && checkBox2.isSelected()) {
-                        text1.setText(checkBox1.getText() + ", " + checkBox2.getText() + ", " + checkBox3.getText() + " is selected!");
-                    } else if (!checkBox1.isSelected() && checkBox2.isSelected()) {
-                        text1.setText(checkBox2.getText() + ", " + checkBox3.getText() + " is selected!");
-                    } else if (checkBox1.isSelected() && !checkBox2.isSelected()) {
-                        text1.setText(checkBox1.getText() + ", " + checkBox3.getText() + " is selected!");
-                    }
-                } else {
-                    if (!checkBox1.isSelected() && !checkBox2.isSelected()) {
-                        text1.setText("Nothing is selected!");
-                    } else if (checkBox1.isSelected() && checkBox2.isSelected()) {
-                        text1.setText(checkBox1.getText() + ", " + checkBox2.getText() + " is selected!");
-                    } else if (!checkBox1.isSelected() && checkBox2.isSelected()) {
-                        text1.setText(checkBox2.getText() + " is selected!");
-                    } else if (checkBox1.isSelected() && !checkBox2.isSelected()) {
-                        text1.setText(checkBox1.getText() + " is selected!");
-                    }
-                }
+        goBack.setOnAction(actionEvent -> {
+            boolean flagHelper;
+
+            upperText.setText("Вход");
+
+            pane.getChildren().remove(goBack);
+            pane.getChildren().remove(registerButton);
+
+            flagHelper = errorFlagUsername.get();
+            if (flagHelper) {
+                pane.getChildren().remove(thisUsernameIsAlreadyTakenError);
+                errorFlagUsername.set(false);
             }
+
+            flagHelper = errorFlagDetails.get();
+            if (flagHelper) {
+                pane.getChildren().remove(someDetailsAreNotWrittenError);
+                errorFlagDetails.set(false);
+            }
+
+            pane.getChildren().add(entryButton);
+            pane.getChildren().add(goToRegistrationButton);
+
+            username.setText("");
+            password.setText("");
         });
 
-        Group group = new Group();
-        group.getChildren().add(text);
-        group.getChildren().add(button);
-        group.getChildren().add(checkBox1);
-        group.getChildren().add(checkBox2);
-        group.getChildren().add(checkBox3);
-        group.getChildren().add(text1);
+        Scene scene = new Scene(pane);
 
-        Scene scene = new Scene(group);
+        stage.setScene(scene);
+        stage.setTitle("NASA corp.");
 
-        primaryStage.setScene(scene);
-        primaryStage.setTitle("Application");
-        primaryStage.setWidth(300);
-        primaryStage.setHeight(300);
-        primaryStage.setMaxWidth(300);
-        primaryStage.setMinWidth(300);
-        primaryStage.setMaxHeight(300);
-        primaryStage.setMinHeight(300);
+        stage.setHeight(300);
+        stage.setWidth(300);
+        stage.setMinHeight(300);
+        stage.setMaxHeight(300);
+        stage.setMinWidth(300);
+        stage.setMaxWidth(300);
 
-        primaryStage.show();
+        stage.show();
     }
 
 
